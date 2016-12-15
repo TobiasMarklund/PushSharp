@@ -7,153 +7,163 @@ using PushSharp.Core;
 
 namespace PushSharp.Apple
 {
-	public class ApplePushChannelSettings : IPushChannelSettings
-	{
-		#region Constants
-		private const string APNS_SANDBOX_HOST = "gateway.sandbox.push.apple.com";
-		private const string APNS_PRODUCTION_HOST = "gateway.push.apple.com";
+    public class ApplePushChannelSettings : IPushChannelSettings
+    {
+        #region Constants
+        private const string APNS_SANDBOX_HOST = "gateway.sandbox.push.apple.com";
+        private const string APNS_PRODUCTION_HOST = "gateway.push.apple.com";
 
-		private const string APNS_SANDBOX_FEEDBACK_HOST = "feedback.sandbox.push.apple.com";
-		private const string APNS_PRODUCTION_FEEDBACK_HOST = "feedback.push.apple.com";
+        private const string APNS_SANDBOX_FEEDBACK_HOST = "feedback.sandbox.push.apple.com";
+        private const string APNS_PRODUCTION_FEEDBACK_HOST = "feedback.push.apple.com";
 
-		private const int APNS_SANDBOX_PORT = 2195;
-		private const int APNS_PRODUCTION_PORT = 2195;
+        private const int APNS_SANDBOX_PORT = 2195;
+        private const int APNS_PRODUCTION_PORT = 2195;
 
-		private const int APNS_SANDBOX_FEEDBACK_PORT = 2196;
-		private const int APNS_PRODUCTION_FEEDBACK_PORT = 2196;
-		#endregion
+        private const int APNS_SANDBOX_FEEDBACK_PORT = 2196;
+        private const int APNS_PRODUCTION_FEEDBACK_PORT = 2196;
 
-		public ApplePushChannelSettings(bool production, string certificateFile, string certificateFilePwd, bool disableCertificateCheck = false) 
-			: this(production, System.IO.File.ReadAllBytes(certificateFile), certificateFilePwd, disableCertificateCheck) { }
+        private const string DEVELOPMENT_EXTENSION_OID = "1.2.840.113635.100.6.3.1";
+        private const string PRODUCTION_EXTENSION_OID = "1.2.840.113635.100.6.3.2";
 
-		public ApplePushChannelSettings(string certificateFile, string certificateFilePwd, bool disableCertificateCheck = false)
-			: this(System.IO.File.ReadAllBytes(certificateFile), certificateFilePwd, disableCertificateCheck) { }
+        #endregion
 
-		//Need to load the private key seperately from apple
-		// Fixed by danielgindi@gmail.com :
-		//      The default is UserKeySet, which has caused internal encryption errors,
-		//      Because of lack of permissions on most hosting services.
-		//      So MachineKeySet should be used instead.
-		public ApplePushChannelSettings(bool production, byte[] certificateData, string certificateFilePwd, bool disableCertificateCheck = false)
-			: this(production, new X509Certificate2(certificateData, certificateFilePwd,
-				X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet | X509KeyStorageFlags.Exportable), disableCertificateCheck) { }
+        public ApplePushChannelSettings(bool production, string certificateFile, string certificateFilePwd, bool disableCertificateCheck = false)
+            : this(production, System.IO.File.ReadAllBytes(certificateFile), certificateFilePwd, disableCertificateCheck) { }
 
-		public ApplePushChannelSettings(byte[] certificateData, string certificateFilePwd, bool disableCertificateCheck = false)
-			: this(new X509Certificate2(certificateData, certificateFilePwd,
-				X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet | X509KeyStorageFlags.Exportable), disableCertificateCheck) { }
+        public ApplePushChannelSettings(string certificateFile, string certificateFilePwd, bool disableCertificateCheck = false)
+            : this(System.IO.File.ReadAllBytes(certificateFile), certificateFilePwd, disableCertificateCheck) { }
 
-		public ApplePushChannelSettings(X509Certificate2 certificate, bool disableCertificateCheck = false)
-		{
-			Initialize(DetectProduction(certificate), certificate, disableCertificateCheck);
-		}
+        //Need to load the private key seperately from apple
+        // Fixed by danielgindi@gmail.com :
+        //      The default is UserKeySet, which has caused internal encryption errors,
+        //      Because of lack of permissions on most hosting services.
+        //      So MachineKeySet should be used instead.
+        public ApplePushChannelSettings(bool production, byte[] certificateData, string certificateFilePwd, bool disableCertificateCheck = false)
+            : this(production, new X509Certificate2(certificateData, certificateFilePwd,
+                X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet | X509KeyStorageFlags.Exportable), disableCertificateCheck)
+        { }
 
-		public ApplePushChannelSettings(bool production, X509Certificate2 certificate, bool disableCertificateCheck = false)
-		{
-			Initialize(production, certificate, disableCertificateCheck);
-		}
+        public ApplePushChannelSettings(byte[] certificateData, string certificateFilePwd, bool disableCertificateCheck = false)
+            : this(new X509Certificate2(certificateData, certificateFilePwd,
+                X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet | X509KeyStorageFlags.Exportable), disableCertificateCheck)
+        { }
 
-		void Initialize(bool production, X509Certificate2 certificate, bool disableCertificateCheck)
-		{
-			this.Host = production ? APNS_PRODUCTION_HOST : APNS_SANDBOX_HOST;
-			this.FeedbackHost = production ? APNS_PRODUCTION_FEEDBACK_HOST : APNS_SANDBOX_FEEDBACK_HOST;
-			this.Port = production ? APNS_PRODUCTION_PORT : APNS_SANDBOX_PORT;
-			this.FeedbackPort = production ? APNS_PRODUCTION_FEEDBACK_PORT : APNS_SANDBOX_FEEDBACK_PORT;
+        public ApplePushChannelSettings(X509Certificate2 certificate, bool disableCertificateCheck = false)
+        {
+            Initialize(DetectProduction(certificate), certificate, disableCertificateCheck);
+        }
 
-			this.Certificate = certificate;
+        public ApplePushChannelSettings(bool production, X509Certificate2 certificate, bool disableCertificateCheck = false)
+        {
+            Initialize(production, certificate, disableCertificateCheck);
+        }
 
-			this.MillisecondsToWaitBeforeMessageDeclaredSuccess = 3000;
-			this.ConnectionTimeout = 10000;
-			this.MaxConnectionAttempts = 3;
+        void Initialize(bool production, X509Certificate2 certificate, bool disableCertificateCheck)
+        {
+            this.Host = production ? APNS_PRODUCTION_HOST : APNS_SANDBOX_HOST;
+            this.FeedbackHost = production ? APNS_PRODUCTION_FEEDBACK_HOST : APNS_SANDBOX_FEEDBACK_HOST;
+            this.Port = production ? APNS_PRODUCTION_PORT : APNS_SANDBOX_PORT;
+            this.FeedbackPort = production ? APNS_PRODUCTION_FEEDBACK_PORT : APNS_SANDBOX_FEEDBACK_PORT;
 
-			this.FeedbackIntervalMinutes = 10;
-			this.FeedbackTimeIsUTC = false;
+            this.Certificate = certificate;
+
+            this.MillisecondsToWaitBeforeMessageDeclaredSuccess = 3000;
+            this.ConnectionTimeout = 10000;
+            this.MaxConnectionAttempts = 3;
+
+            this.FeedbackIntervalMinutes = 10;
+            this.FeedbackTimeIsUTC = false;
 
             this.AdditionalCertificates = new List<X509Certificate2>();
             this.AddLocalAndMachineCertificateStores = false;
 
-			if (!disableCertificateCheck)	
-				CheckProductionCertificateMatching(production);
+            if (!disableCertificateCheck)
+                CheckProductionCertificateMatching(production);
 
             this.ValidateServerCertificate = false;
         }
 
-		public bool DetectProduction(X509Certificate2 certificate)
-		{
-			bool production = false;
+        public bool DetectProduction(X509Certificate2 certificate)
+        {
+            bool production = false;
 
-			if (certificate != null)
-			{
-				var subjectName = certificate.SubjectName.Name;
+            if (certificate != null)
+            {
+                var subjectName = certificate.SubjectName.Name;
 
-				if (subjectName.Contains("Apple Production IOS Push Services"))
-					production = true;
-			}
-			
-			return production;
-		}
+                if (subjectName.Contains("Apple Production IOS Push Services"))
+                    production = true;
+            }
 
-		void CheckProductionCertificateMatching(bool production)
-		{
-			if (this.Certificate != null)
-			{
-				var issuerName = this.Certificate.IssuerName.Name;
-				var subjectName = this.Certificate.SubjectName.Name;
+            return production;
+        }
 
-				if (!issuerName.Contains("Apple"))
-					throw new ArgumentException("Your Certificate does not appear to be issued by Apple!  Please check to ensure you have the correct certificate!");
+        void CheckProductionCertificateMatching(bool production)
+        {
+            if (this.Certificate != null)
+            {
+                var issuerName = this.Certificate.IssuerName.Name;
 
-				if (production && !subjectName.Contains("Apple Production IOS Push Services"))
-					throw new ArgumentException("You have selected the Production server, yet your Certificate does not appear to be the Production certificate!  Please check to ensure you have the correct certificate!");
+                if (!issuerName.Contains("Apple"))
+                    throw new ArgumentException("Your Certificate does not appear to be issued by Apple!  Please check to ensure you have the correct certificate!");
 
+                var extensionOid = production ? PRODUCTION_EXTENSION_OID : DEVELOPMENT_EXTENSION_OID;
+                foreach (var certificateExtension in this.Certificate.Extensions)
+                {
+                    if (certificateExtension.Oid.Value == extensionOid)
+                        return;
+                }
 
-				if (!production && !subjectName.Contains("Apple Development IOS Push Services") && !subjectName.Contains("Pass Type ID"))
-						throw new ArgumentException("You have selected the Development/Sandbox (Not production) server, yet your Certificate does not appear to be the Development/Sandbox certificate!  Please check to ensure you have the correct certificate!");				
-			}
-			else
-				throw new ArgumentNullException("You must provide a Certificate to connect to APNS with!");
-		}
+                if (production)
+                    throw new ArgumentException("You have selected the Production server, yet your Certificate does not appear to be the Production certificate!  Please check to ensure you have the correct certificate!");
 
-		public void OverrideServer(string host, int port)
-		{
-			this.Host = host;
-			this.Port = port;
-		}
+                throw new ArgumentException("You have selected the Development/Sandbox (Not production) server, yet your Certificate does not appear to be the Development/Sandbox certificate!  Please check to ensure you have the correct certificate!");
+            }
+            else
+                throw new ArgumentNullException("You must provide a Certificate to connect to APNS with!");
+        }
 
-		public void OverrideFeedbackServer(string host, int port)
-		{
-			this.FeedbackHost = host;
-			this.FeedbackPort = port;
-		}
+        public void OverrideServer(string host, int port)
+        {
+            this.Host = host;
+            this.Port = port;
+        }
 
-		public string Host
-		{
-			get;
-			private set;
-		}
+        public void OverrideFeedbackServer(string host, int port)
+        {
+            this.FeedbackHost = host;
+            this.FeedbackPort = port;
+        }
 
-		public int Port
-		{
-			get;
-			private set;
-		}
+        public string Host
+        {
+            get;
+            private set;
+        }
 
-		public string FeedbackHost
-		{
-			get;
-			private set;
-		}
+        public int Port
+        {
+            get;
+            private set;
+        }
 
-		public int FeedbackPort
-		{
-			get;
-			private set;
-		}
+        public string FeedbackHost
+        {
+            get;
+            private set;
+        }
 
-		public X509Certificate2 Certificate
-		{
-			get;
-			private set;
-		}
+        public int FeedbackPort
+        {
+            get;
+            private set;
+        }
+
+        public X509Certificate2 Certificate
+        {
+            get;
+            private set;
+        }
 
         public List<X509Certificate2> AdditionalCertificates
         {
@@ -167,29 +177,29 @@ namespace PushSharp.Apple
             set;
         }
 
-		public bool SkipSsl
-		{
-			get;
-			set;
-		}
+        public bool SkipSsl
+        {
+            get;
+            set;
+        }
 
-		public int MillisecondsToWaitBeforeMessageDeclaredSuccess
-		{
-			get;
-			set;
-		}
+        public int MillisecondsToWaitBeforeMessageDeclaredSuccess
+        {
+            get;
+            set;
+        }
 
-		public int FeedbackIntervalMinutes
-		{
-			get;
-			set;
-		}
+        public int FeedbackIntervalMinutes
+        {
+            get;
+            set;
+        }
 
-		public bool FeedbackTimeIsUTC
-		{
-			get;
-			set;
-		}
+        public bool FeedbackTimeIsUTC
+        {
+            get;
+            set;
+        }
 
         public bool ValidateServerCertificate
         {
@@ -197,7 +207,7 @@ namespace PushSharp.Apple
             set;
         }
 
-		public int ConnectionTimeout { get; set; }
-		public int MaxConnectionAttempts { get; set; }
-	}
+        public int ConnectionTimeout { get; set; }
+        public int MaxConnectionAttempts { get; set; }
+    }
 }
